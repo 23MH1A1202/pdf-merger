@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seamless PDF & Image Merger</title>
+    
+    <!-- Libraries -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #059669;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 60px 20px 120px 20px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header { text-align: center; max-width: 600px; width: 100%; margin-bottom: 40px; }
+        h1 { margin: 0 0 12px 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+        p.subtitle { color: var(--text-muted); margin: 0; font-size: 16px; line-height: 1.5; }
+
+        /* Modern Upload Zone */
+        .upload-area {
+            background-color: var(--surface);
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-lg);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background-color: #eef2ff;
+        }
+
+        .upload-icon {
+            width: 48px; height: 48px;
+            color: var(--primary);
+            margin-bottom: 16px;
+            background: #e0e7ff;
+            border-radius: 50%;
+            padding: 10px;
+            display: inline-block;
+        }
+        
+        .upload-area input { display: none; }
+
+        /* Grid & Cards */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .card:active { cursor: grabbing; transform: translateY(0); }
+
+        .card-header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .sequence-badge {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            color: white;
+            width: 24px; height: 24px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 12px;
+        }
+
+        .remove-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-muted);
+            border: none;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+        .remove-btn:hover { background: var(--danger-bg); color: var(--danger); }
+
+        .thumb-container {
+            height: 220px;
+            background-color: #f8fafc;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .thumb-container img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+
+        .card-details { padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+        .file-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+        .file-meta { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; font-weight: 500; }
+
+        /* Success View */
+        .success-box {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Floating Action Bar */
+        .action-container {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 100; display: flex; gap: 12px;
+            background: rgba(255, 255, 255, 0.85); padding: 12px;
+            border-radius: 100px; box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .btn {
+            padding: 14px 28px; border-radius: 100px; border: none; cursor: pointer;
+            font-size: 15px; font-weight: 600; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4); }
+        .btn-success { background-color: var(--success); color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4); }
+        .btn-outline { background-color: var(--surface); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-outline:hover { background-color: var(--bg); }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(4px);
+            z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .loader-box { 
+            background: var(--surface); padding: 40px; border-radius: var(--radius-lg); 
+            text-align: center; width: 320px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+        }
+        
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid #e0e7ff; border-top: 4px solid var(--primary);
+            border-radius: 50%; margin: 0 auto 24px auto; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .loading-text { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text-main); }
+        .progress-bar-container { width: 100%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease-out; border-radius: 10px; }
+        
+        .sortable-ghost { opacity: 0.3; transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader-box">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Processing...</div>
+            <div class="progress-bar-container">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Combine Documents</h1>
+        <p class="subtitle">Upload PDFs and images. Drag to rearrange, then combine them into a single neat file.</p>
+    </div>
+
+    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        </div>
+        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Click or drop files here</div>
+        <div style="font-size: 14px; color: var(--text-muted);">Supports .pdf, .png, .jpg</div>
+        <input type="file" id="fileInput" multiple accept=".pdf, image/png, image/jpeg, image/jpg">
+    </div>
+
+    <div class="grid-container" id="gridContainer"></div>
+
+    <div class="action-container" id="actionContainer" style="display: none;">
+        <button id="mergeBtn" class="btn btn-primary">Combine Documents</button>
+        <button id="downloadBtn" class="btn btn-success" style="display: none;">
+            <svg style="width:20px;height:20px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Save PDF
+        </button>
+        <button id="startOverBtn" class="btn btn-outline" style="display: none;">Start Over</button>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const gridContainer = document.getElementById('gridContainer');
+        const actionContainer = document.getElementById('actionContainer');
+        const mergeBtn = document.getElementById('mergeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const startOverBtn = document.getElementById('startOverBtn');
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+
+        let filesData = []; 
+        let finalPdfBlobUrl = null; 
+
+        new Sortable(gridContainer, {
+            animation: 200, 
+            ghostClass: 'sortable-ghost', 
+            onEnd: updateSequenceNumbers 
+        });
+
+        // Drag and Drop native support for the upload box
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files && dt.files.length) handleFiles({ target: { files: dt.files } });
+        });
+
+        fileInput.addEventListener('change', handleFiles);
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        const yieldToUI = () => new Promise(resolve => setTimeout(resolve, 0));
+
+        function showLoading(text, percent) {
+            loadingOverlay.classList.add('active');
+            loadingText.textContent = text;
+            progressFill.style.width = percent + '%';
+        }
+
+        function hideLoading() { loadingOverlay.classList.remove('active'); }
+
+        async function handleFiles(e) {
+            const newFiles = Array.from(e.target.files);
+            if (newFiles.length === 0) return;
+
+            if (finalPdfBlobUrl) startOver();
+
+            showLoading(`Reading files...`, 0);
+            
+            let completelyRejectedFiles = []; 
+
+            for (let i = 0; i < newFiles.length; i++) {
+                const file = newFiles[i];
+                showLoading(`Loading: ${file.name}...`, Math.round((i / newFiles.length) * 100));
+                await yieldToUI(); 
+
+                const id = 'file-' + Math.random().toString(36).substr(2, 9);
+                let thumbUrl = '';
+                let metaText = '';
+                let requiresFallback = false; 
+                const fileSize = formatBytes(file.size);
+
+                if (file.type === 'application/pdf') {
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        await PDFLib.PDFDocument.load(arrayBuffer); 
+                    } catch (err) {
+                        requiresFallback = true;
+                    }
+
+                    try {
+                        const fileUrl = URL.createObjectURL(file);
+                        const loadingTask = pdfjsLib.getDocument(fileUrl);
+                        const pdf = await loadingTask.promise;
+                        const pageCount = pdf.numPages;
+                        metaText = `${pageCount} Page${pageCount > 1 ? 's' : ''}`;
+
+                        const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({ scale: 0.5 }); 
+                        const canvas = document.createElement('canvas');
+                        canvas.height = viewport.height; canvas.width = viewport.width;
+                        const context = canvas.getContext('2d');
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        thumbUrl = canvas.toDataURL();
+                        
+                    } catch (err) {
+                        completelyRejectedFiles.push(file.name); 
+                        continue; 
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    thumbUrl = URL.createObjectURL(file);
+                    metaText = "Image";
+                } else {
+                    continue; // Skip unsupported types
+                }
+
+                filesData.push({ id, file, requiresFallback });
+                createCard(id, file.name, thumbUrl, metaText, fileSize);
+            }
+
+            showLoading("Done!", 100);
+            await new Promise(r => setTimeout(r, 400)); 
+
+            updateSequenceNumbers();
+            updateUIVisibility();
+            if(fileInput) fileInput.value = ''; 
+            hideLoading();
+
+            if (completelyRejectedFiles.length > 0) {
+                setTimeout(() => alert("These files are completely locked by a password and cannot be opened:\n\n• " + completelyRejectedFiles.join("\n• ")), 200);
+            }
+        }
+
+        function createCard(id, fileName, thumbUrl, metaText, fileSize) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.setAttribute('data-id', id);
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="sequence-badge">0</div>
+                    <button class="remove-btn" title="Remove file">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="thumb-container">
+                    ${thumbUrl ? `<img src="${thumbUrl}" alt="preview">` : `<div style="color:var(--text-muted)">No Preview</div>`}
+                </div>
+                <div class="card-details">
+                    <span class="file-name" title="${fileName}">${fileName}</span>
+                    <div class="file-meta">
+                        <span>${metaText}</span>
+                        <span>${fileSize}</span>
+                    </div>
+                </div>
+            `;
+
+            card.querySelector('.remove-btn').onclick = (e) => {
+                e.stopPropagation(); card.remove();
+                filesData = filesData.filter(data => data.id !== id);
+                updateSequenceNumbers(); updateUIVisibility();
+            };
+
+            gridContainer.appendChild(card);
+        }
+
+        function updateSequenceNumbers() {
+            const badges = document.querySelectorAll('.sequence-badge');
+            badges.forEach((badge, index) => { badge.textContent = index + 1; });
+        }
+
+        function updateUIVisibility() {
+            if (filesData.length > 0 || finalPdfBlobUrl) {
+                actionContainer.style.display = 'flex';
+                if (filesData.length > 0 && !finalPdfBlobUrl) {
+                    mergeBtn.style.display = 'flex';
+                    mergeBtn.textContent = `Combine ${filesData.length} Document${filesData.length > 1 ? 's' : ''}`;
+                }
+            } else { actionContainer.style.display = 'none'; }
+        }
+
+        function startOver() {
+            filesData = []; gridContainer.innerHTML = '';
+            if (finalPdfBlobUrl) { URL.revokeObjectURL(finalPdfBlobUrl); finalPdfBlobUrl = null; }
+            mergeBtn.style.display = 'flex'; downloadBtn.style.display = 'none'; startOverBtn.style.display = 'none';
+            updateUIVisibility();
+        }
+
+        mergeBtn.addEventListener('click', async () => {
+            if (filesData.length === 0) return;
+
+            try {
+                showLoading("Preparing...", 0); await yieldToUI();
+
+                const { PDFDocument } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+                const currentOrderElements = Array.from(gridContainer.children);
+                const totalFiles = currentOrderElements.length;
+                
+                for (let i = 0; i < totalFiles; i++) {
+                    const card = currentOrderElements[i];
+                    const id = card.getAttribute('data-id');
+                    const fileData = filesData.find(f => f.id === id);
+                    const fileObj = fileData.file;
+                    const arrayBuffer = await fileObj.arrayBuffer();
+
+                    // Generic loading text, hiding the background fallback process from the user
+                    showLoading(`Merging File ${i + 1} of ${totalFiles}...`, Math.round((i / totalFiles) * 85));
+                    await yieldToUI(); 
+
+                    if (fileObj.type === 'application/pdf') {
+                        if (fileData.requiresFallback) {
+                            const loadingTask = pdfjsLib.getDocument(URL.createObjectURL(fileObj));
+                            const fallbackPdf = await loadingTask.promise;
+                            
+                            for (let p = 1; p <= fallbackPdf.numPages; p++) {
+                                const page = await fallbackPdf.getPage(p);
+                                const viewport = page.getViewport({ scale: 2.0 }); 
+                                
+                                const canvas = document.createElement('canvas');
+                                canvas.width = viewport.width; canvas.height = viewport.height;
+                                const ctx = canvas.getContext('2d');
+                                
+                                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                                
+                                const imgDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                                const imgBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
+                                
+                                const embeddedImage = await mergedPdf.embedJpg(imgBytes);
+                                const newPage = mergedPdf.addPage([embeddedImage.width, embeddedImage.height]);
+                                newPage.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
+                            }
+                        } 
+                        else {
+                            const pdf = await PDFDocument.load(arrayBuffer);
+                            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                            copiedPages.forEach((page) => mergedPdf.addPage(page));
+                        }
+                    } 
+                    else if (fileObj.type.startsWith('image/')) {
+                        let image;
+                        if (fileObj.type === 'image/jpeg' || fileObj.type === 'image/jpg') image = await mergedPdf.embedJpg(arrayBuffer);
+                        else if (fileObj.type === 'image/png') image = await mergedPdf.embedPng(arrayBuffer);
+
+                        if (image) {
+                            const page = mergedPdf.addPage([image.width, image.height]);
+                            page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+                        }
+                    }
+                }
+
+                showLoading("Finalizing PDF...", 95); await yieldToUI();
+                const mergedPdfBytes = await mergedPdf.save();
+                
+                showLoading("Done!", 100); await yieldToUI();
+
+                const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                finalPdfBlobUrl = URL.createObjectURL(blob);
+
+                filesData = [];
+                gridContainer.innerHTML = `
+                    <div class="success-box">
+                        <div style="background:#d1fae5; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto;">
+                            <svg style="width:32px;height:32px;color:#059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h2 style="margin:0 0 12px 0; font-size:24px; color:var(--text-main); font-weight:700;">Ready to Download</h2>
+                        <p style="margin:0; font-size:16px; color:var(--text-muted);">Your documents have been seamlessly combined.<br>Click below to save the file.</p>
+                    </div>
+                `;
+
+                mergeBtn.style.display = 'none'; downloadBtn.style.display = 'flex'; startOverBtn.style.display = 'flex';
+                setTimeout(hideLoading, 500);
+
+            } catch (error) {
+                console.error(error); alert("An error occurred during merge. Check console."); hideLoading();
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!finalPdfBlobUrl) return;
+            const link = document.createElement('a'); link.href = finalPdfBlobUrl; link.download = 'Combined_Documents.pdf'; link.click();
+        });
+
+        startOverBtn.addEventListener('click', startOver);
+    </script>
+</body>
+</html>
