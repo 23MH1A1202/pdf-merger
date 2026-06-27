@@ -6,6 +6,10 @@ Because all processing happens directly in the browser, your sensitive documents
 
 ---
 
+## Access it using https://23mh1a1202.github.io/pdf-merger/
+
+---
+
 ## ✨ Key Features
 
 * **Complete Client-Side Processing:** Merging and rendering are handled entirely in your browser. No backend uploads means zero wait time and total privacy.
