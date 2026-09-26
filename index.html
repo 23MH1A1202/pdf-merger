@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Pdfy — Simple PDF & Image Merger</title>
-    <meta name="description" content="A fast, minimal client-side web application by Ambati Lalitha Sagar to combine, reorder, split, and rotate PDF documents and images.">
+    <meta name="description" content="Pdfy is a minimal, fast, client-side tool to combine PDF files and images into a single PDF.">
     <meta property="og:title" content="Pdfy — Simple PDF & Image Merger">
-    <meta property="og:description" content="A fast, minimal client-side web application by Ambati Lalitha Sagar to combine, reorder, split, and rotate PDF documents and images.">
+    <meta property="og:description" content="Pdfy is a minimal, fast, client-side tool to combine PDF files and images into a single PDF.">
 
-    <!-- Google Fonts: Plus Jakarta Sans + JetBrains Mono -->
+    <!-- Fonts: Plus Jakarta Sans + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -51,7 +51,7 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* Drag & Drop Sortable States */
+        /* Glitch-free SortableJS drag styling */
         .sortable-ghost {
             opacity: 0.3 !important;
             background-color: #F1F5F9 !important;
@@ -76,200 +76,126 @@
         }
 
         .thumb-rotatable {
-            transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, ::before, ::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
+            transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-slate-900 selection:text-white">
 
-    <!-- Minimal Top Bar Contract: Zone 1 (Brand) — Zone 2 (Clean Links) — Zone 3 (Primary Action) -->
+    <!-- Clean Brand Header (No Duplicate Action Buttons) -->
     <header class="bg-white border-b border-slate-200 px-4 sm:px-8 h-14 flex items-center justify-between shrink-0">
-        <!-- Zone 1: Single Brand Wordmark -->
-        <a href="#" id="brandHomeLink" class="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap">
+        <a href="#" id="brandResetLink" class="text-lg font-bold tracking-tight text-slate-900">
             Pdfy
         </a>
-
-        <!-- Zone 2: Minimal Navigation Links -->
-        <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-            <button type="button" id="navMergeLink" class="text-slate-900 underline underline-offset-8 decoration-2 decoration-slate-900 py-1 transition-colors whitespace-nowrap">
-                Merge
-            </button>
-            <button type="button" id="navSplitLink" class="hover:text-slate-900 py-1 transition-colors whitespace-nowrap">
-                Split Pages
-            </button>
-            <button type="button" id="navOptionsLink" class="hover:text-slate-900 py-1 transition-colors whitespace-nowrap">
-                Options
-            </button>
-            <a href="#developerFooter" class="hover:text-slate-900 py-1 transition-colors whitespace-nowrap">
-                Developer
-            </a>
-        </nav>
-
-        <!-- Zone 3: Primary Action -->
-        <div class="flex items-center gap-2">
-            <button type="button" id="headerOptionsBtn" class="min-h-[38px] px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-                </svg>
-                <span>Options</span>
-            </button>
-            <button type="button" id="headerAddBtn" class="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>Add Files</span>
-            </button>
+        <div id="headerSummary" class="text-xs font-mono tabular-nums text-slate-500">
+            PDF &amp; Image Merger
         </div>
     </header>
 
     <!-- Hidden File Input -->
     <input type="file" id="fileInput" class="hidden" multiple accept=".pdf,application/pdf,image/png,image/jpeg,image/jpg,image/webp">
 
-    <!-- Non-Intrusive Toast Notification -->
+    <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-16 right-4 left-4 sm:left-auto sm:w-80 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- Main Content Area -->
-    <main class="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 py-6 flex flex-col">
+    <main class="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col">
 
-        <!-- STATE 1: Single Centered Upload Screen (Shown when 0 files are loaded) -->
-        <section id="emptyUploadView" class="flex-1 flex flex-col items-center justify-center py-8 sm:py-16">
-            <div class="w-full max-w-xl text-center">
-                <h1 class="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900 mb-2" style="text-wrap: balance;">
+        <!-- STATE 1: Single Centered Upload Screen (Shown when 0 files) -->
+        <section id="emptyStateView" class="flex-1 flex flex-col items-center justify-center my-auto py-8">
+            <div id="dropZone" role="button" tabindex="0" aria-label="Select PDF or Image files"
+                class="w-full max-w-xl bg-white border-2 border-dashed border-slate-300 hover:border-slate-900 rounded-3xl p-8 sm:p-14 text-center cursor-pointer transition-all shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+                <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center mx-auto mb-5">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-2" style="text-wrap: balance;">
                     Merge PDF &amp; Images
                 </h1>
-                <p class="text-sm sm:text-base text-slate-500 mb-8">
-                    Select your files, drag to arrange, and download one clean PDF.
+                <p class="text-sm text-slate-500 mb-7">
+                    Drop your PDFs or photos here, or tap below to choose files.
                 </p>
-
-                <!-- Friendly iLovePDF-Style Drop Card -->
-                <div id="heroDropZone" role="button" tabindex="0" aria-label="Select PDF or image files"
-                    class="bg-white border-2 border-dashed border-slate-300 hover:border-slate-900 rounded-2xl p-8 sm:p-12 transition-all cursor-pointer shadow-xs flex flex-col items-center justify-center gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
-                    <div class="w-16 h-16 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <span class="inline-flex min-h-[48px] px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-base font-semibold rounded-xl items-center justify-center transition-colors">
-                            Select PDF or Images
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-400">
-                        or drop PDF, JPG, PNG, WebP files anywhere here
-                    </p>
-                </div>
+                <span class="inline-flex items-center justify-center min-h-[48px] px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-colors">
+                    Select Files
+                </span>
             </div>
         </section>
 
-        <!-- STATE 2: Active Workspace View (Shown once files are added) -->
-        <section id="activeWorkspaceView" class="hidden flex-1 flex flex-col gap-5 pb-24">
+        <!-- STATE 2: Active Workspace (Shown when 1+ files) -->
+        <section id="workspaceView" class="hidden flex-1 flex flex-col pb-24">
 
-            <!-- Simple Handy Control Bar -->
-            <div class="bg-white border border-slate-200 rounded-xl p-3 sm:px-4 flex flex-wrap items-center justify-between gap-3">
-                <!-- Left: Live Count + View Mode Toggle -->
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
-                        <button type="button" id="viewGridBtn" class="min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-xs flex items-center gap-1.5 whitespace-nowrap">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                            </svg>
-                            <span>Grid</span>
-                        </button>
-                        <button type="button" id="viewListBtn" class="min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </svg>
-                            <span>List</span>
-                        </button>
-                    </div>
-
-                    <div class="text-xs font-mono tabular-nums text-slate-500 hidden sm:flex items-center gap-1.5">
-                        <span id="statItemsCount">0 files</span>
-                        <span aria-hidden="true">·</span>
-                        <span id="statPagesCount">0 pages</span>
-                    </div>
-                </div>
-
-                <!-- Right: Quick Actions -->
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <button type="button" id="addMoreBtn" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Add More</span>
-                    </button>
-                    <button type="button" id="splitAllBtn" class="min-h-[36px] px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap" title="Turn multi-page PDFs into individual pages">
-                        Split Pages
-                    </button>
-                    <button type="button" id="rotateAllBtn" class="min-h-[36px] px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap">
-                        Rotate All
-                    </button>
-                    <button type="button" id="sortAzBtn" class="min-h-[36px] px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap">
-                        A–Z
-                    </button>
-                    <button type="button" id="clearAllBtn" class="min-h-[36px] px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors whitespace-nowrap">
-                        Clear
-                    </button>
-                </div>
+            <!-- Subtle Helper Hint -->
+            <div class="flex items-center justify-between gap-2 mb-4">
+                <p class="text-xs text-slate-500">
+                    Drag cards to reorder · Tap any thumbnail to preview
+                </p>
+                <span id="activeSettingsSummary" class="text-xs font-mono text-slate-500 truncate"></span>
             </div>
 
-            <!-- Download Ready Card (Appears right at the top when merged) -->
-            <div id="mergedReadyBanner" class="hidden bg-slate-900 text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <div class="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center shrink-0">
+            <!-- Merged Ready Banner (Only appears after clicking Merge PDF) -->
+            <div id="mergedBanner" class="hidden mb-5 bg-slate-900 text-white rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-white/10 text-emerald-400 flex items-center justify-center shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                         </svg>
                     </div>
                     <div class="min-w-0">
-                        <div class="text-sm sm:text-base font-bold text-white truncate" id="mergedBannerTitle">
-                            Your PDF is ready!
-                        </div>
-                        <div class="text-xs font-mono tabular-nums text-slate-300 mt-0.5 flex items-center gap-2" id="mergedBannerMeta">
-                            <span>0 pages</span>
-                            <span aria-hidden="true">·</span>
-                            <span>0 KB</span>
-                        </div>
+                        <div id="mergedBannerTitle" class="text-sm font-semibold truncate">Merged.pdf is ready</div>
+                        <div id="mergedBannerMeta" class="text-xs font-mono tabular-nums text-slate-300"></div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
-                    <button type="button" id="previewMergedBtn" class="min-h-[42px] px-3.5 py-2 text-xs font-semibold bg-white/15 hover:bg-white/25 text-white rounded-xl transition-colors whitespace-nowrap">
-                        Preview PDF
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                    <button type="button" id="previewMergedBtn" class="min-h-[40px] px-3.5 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors whitespace-nowrap">
+                        Preview
                     </button>
-                    <button type="button" id="downloadMergedBtn" class="min-h-[42px] px-5 py-2 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-900 rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                        </svg>
-                        <span>Download PDF</span>
+                    <button type="button" id="downloadMergedBtn" class="min-h-[40px] px-4 py-2 text-xs font-semibold bg-white text-slate-900 hover:bg-slate-100 rounded-xl transition-colors whitespace-nowrap">
+                        Download Again
                     </button>
                 </div>
             </div>
 
-            <!-- Sortable Cards Container -->
-            <div id="itemsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4"></div>
-
+            <!-- Sortable File Card Grid -->
+            <div id="itemsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 sm:gap-4"></div>
         </section>
 
     </main>
 
-    <!-- Floating Bottom Merge Bar (Only visible when files are loaded; compact & mobile friendly) -->
-    <div id="bottomActionBar" class="hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-3">
-        <div class="max-w-[1200px] mx-auto flex items-center justify-between gap-3">
-            <button type="button" id="bottomOptionsBtn" class="min-h-[44px] px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-2 whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-                </svg>
-                <span>PDF Options</span>
-            </button>
+    <!-- Single Unified Action Bar (Only visible when 1+ files are in workspace) -->
+    <div id="unifiedActionBar" class="hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 sm:px-6 py-2.5">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            <!-- Secondary Actions (Left) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto">
+                <button type="button" id="barAddBtn" class="min-h-[44px] px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Add</span>
+                </button>
 
-            <button type="button" id="mainMergeBtn" class="flex-1 sm:flex-initial sm:min-w-[240px] min-h-[44px] px-6 py-2.5 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 active:scale-[0.99] rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-sm">
-                <span id="mainMergeBtnText">Merge PDF</span>
+                <button type="button" id="barSplitBtn" class="hidden min-h-[44px] px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0" title="Expand multi-page PDFs into individual page cards">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                    </svg>
+                    <span>Split Pages</span>
+                </button>
+
+                <button type="button" id="barOptionsBtn" class="min-h-[44px] px-3 sm:px-3.5 py-2 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    <span>Options</span>
+                </button>
+
+                <button type="button" id="barClearBtn" class="min-h-[44px] px-3 py-2 text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors whitespace-nowrap shrink-0">
+                    Clear
+                </button>
+            </div>
+
+            <!-- Primary CTA (Right) -->
+            <button type="button" id="barMergeBtn" class="min-h-[44px] px-5 sm:px-7 py-2.5 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 active:scale-[0.99] rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0">
+                <span id="barMergeBtnText">Merge PDF</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                 </svg>
@@ -277,40 +203,34 @@
         </div>
     </div>
 
-    <!-- Clean Minimal Footer with Developer Attribution -->
-    <footer id="developerFooter" class="bg-white border-t border-slate-200 py-5 px-4 sm:px-8 mt-auto">
-        <div class="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-            <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-900">Pdfy</span>
-                <span aria-hidden="true">·</span>
-                <span>100% Private Browser PDF Studio</span>
-            </div>
-            <div class="flex flex-wrap items-center justify-center gap-2 text-slate-600">
-                <span>Developed by <strong class="font-semibold text-slate-900">Ambati Lalitha Sagar</strong></span>
-                <span aria-hidden="true">·</span>
-                <a href="https://alsagar.tech" target="_blank" rel="noopener noreferrer" class="text-slate-900 font-medium underline underline-offset-4 hover:text-slate-600 transition-colors">
+    <!-- Minimal Developer Attribution Footer -->
+    <footer class="border-t border-slate-200/80 bg-white py-4 px-4 sm:px-8 text-center text-xs text-slate-500">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>Built by <strong class="font-semibold text-slate-800">Ambati Lalitha Sagar</strong></span>
+            <div class="flex items-center gap-3">
+                <a href="https://alsagar.tech" target="_blank" rel="noopener noreferrer" class="hover:text-slate-900 underline underline-offset-4 transition-colors">
                     alsagar.tech
                 </a>
                 <span aria-hidden="true">·</span>
-                <a href="mailto:lalithasagarambati@gmail.com" class="text-slate-900 font-medium underline underline-offset-4 hover:text-slate-600 transition-colors">
+                <a href="mailto:lalithasagarambati@gmail.com" class="hover:text-slate-900 transition-colors">
                     lalithasagarambati@gmail.com
                 </a>
             </div>
         </div>
     </footer>
 
-    <!-- Collapsible Options Popup / Drawer (Hidden until user clicks Options) -->
-    <div id="optionsModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-xl flex flex-col gap-4 max-h-[88vh] overflow-y-auto">
+    <!-- Collapsible PDF Options Modal / Drawer (Hidden until Options is clicked) -->
+    <div id="optionsModal" class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white border border-slate-200 rounded-t-3xl sm:rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col gap-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 class="text-base font-bold text-slate-900">PDF Options</h2>
-                <button type="button" id="closeOptionsBtn" class="min-h-[36px] min-w-[36px] rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button type="button" id="closeOptionsBtn" class="w-9 h-9 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center">
+                    ✕
                 </button>
             </div>
 
             <!-- File Name -->
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
                 <label for="outputFilename" class="text-xs font-semibold text-slate-700">File Name</label>
                 <div class="relative flex items-center">
                     <input type="text" id="outputFilename" value="Pdfy_Merged" placeholder="Pdfy_Merged"
@@ -319,119 +239,96 @@
                 </div>
             </div>
 
-            <!-- Page Size -->
-            <div class="flex flex-col gap-1.5">
-                <label for="pageSizeSelect" class="text-xs font-semibold text-slate-700">Page Size</label>
-                <select id="pageSizeSelect" class="w-full min-h-[42px] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
-                    <option value="original">Keep Original Size</option>
-                    <option value="a4-portrait">A4 Portrait</option>
-                    <option value="a4-landscape">A4 Landscape</option>
-                    <option value="letter-portrait">US Letter Portrait</option>
-                    <option value="letter-landscape">US Letter Landscape</option>
-                </select>
-            </div>
-
-            <!-- Image Fit & Margin -->
+            <!-- Page Size & Image Fit -->
             <div class="grid grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1.5">
-                    <label for="imageFitSelect" class="text-xs font-semibold text-slate-700">Image Fit</label>
-                    <select id="imageFitSelect" class="w-full min-h-[42px] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
-                        <option value="contain">Fit Whole Image</option>
-                        <option value="cover">Fill Page</option>
-                        <option value="native">Original Size</option>
+                <div class="flex flex-col gap-1">
+                    <label for="pageSizeSelect" class="text-xs font-semibold text-slate-700">Page Size</label>
+                    <select id="pageSizeSelect" class="w-full min-h-[42px] px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
+                        <option value="original">Auto (Original)</option>
+                        <option value="a4-portrait">A4 Portrait</option>
+                        <option value="a4-landscape">A4 Landscape</option>
+                        <option value="letter-portrait">Letter Portrait</option>
                     </select>
                 </div>
-                <div class="flex flex-col gap-1.5">
-                    <label for="pageMarginSelect" class="text-xs font-semibold text-slate-700">Image Margin</label>
-                    <select id="pageMarginSelect" class="w-full min-h-[42px] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
+
+                <div class="flex flex-col gap-1">
+                    <label for="pageMarginSelect" class="text-xs font-semibold text-slate-700">Photo Margin</label>
+                    <select id="pageMarginSelect" class="w-full min-h-[42px] px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
                         <option value="0">No Margin</option>
-                        <option value="20" selected>Small</option>
-                        <option value="36">Medium</option>
-                        <option value="54">Large</option>
+                        <option value="24" selected>Small Margin</option>
+                        <option value="48">Wide Margin</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Page Numbers -->
-            <div class="flex flex-col gap-1.5">
-                <label for="pageNumberSelect" class="text-xs font-semibold text-slate-700">Page Numbers</label>
-                <select id="pageNumberSelect" class="w-full min-h-[42px] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
-                    <option value="none">Off</option>
-                    <option value="bottom-center">Bottom Center (1 / 5)</option>
-                    <option value="bottom-right">Bottom Right (Page 1 of 5)</option>
-                    <option value="top-right">Top Right (1 / 5)</option>
-                </select>
+            <!-- Page Numbers & Watermark -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex flex-col gap-1">
+                    <label for="pageNumberSelect" class="text-xs font-semibold text-slate-700">Page Numbers</label>
+                    <select id="pageNumberSelect" class="w-full min-h-[42px] px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
+                        <option value="none">Off</option>
+                        <option value="bottom-center">Bottom Center</option>
+                        <option value="bottom-right">Bottom Right</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label for="watermarkInput" class="text-xs font-semibold text-slate-700">Watermark</label>
+                    <input type="text" id="watermarkInput" placeholder="Optional text"
+                        class="w-full min-h-[42px] px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
+                </div>
             </div>
 
-            <!-- Watermark -->
-            <div class="flex flex-col gap-1.5">
-                <label for="watermarkInput" class="text-xs font-semibold text-slate-700">Watermark Text (Optional)</label>
-                <input type="text" id="watermarkInput" placeholder="e.g. DRAFT or CONFIDENTIAL"
-                    class="w-full min-h-[42px] px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
-            </div>
-
-            <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                <button type="button" id="resetOptionsBtn" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900">
-                    Reset Defaults
+            <div class="pt-2 flex items-center justify-end gap-2">
+                <button type="button" id="resetOptionsBtn" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                    Reset
                 </button>
-                <button type="button" id="saveOptionsBtn" class="min-h-[42px] px-6 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl">
+                <button type="button" id="saveOptionsBtn" class="min-h-[42px] px-6 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors">
                     Done
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Overflow-Safe Loading Popup -->
+    <!-- Overflow-Safe Loading Modal -->
     <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-xs shadow-xl flex flex-col items-center text-center overflow-hidden">
-            <div class="w-10 h-10 rounded-full border-3 border-slate-200 border-t-slate-900 animate-spin mb-4 shrink-0"></div>
+            <div class="w-10 h-10 rounded-full border-3 border-slate-200 border-t-slate-900 animate-spin mb-3.5 shrink-0"></div>
             <div class="w-full min-w-0">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                    <span id="loadingTitle" class="text-sm font-bold text-slate-900 truncate">Working...</span>
+                    <span id="loadingTitle" class="text-sm font-semibold text-slate-900 truncate">Loading...</span>
                     <span id="loadingPercent" class="text-xs font-mono tabular-nums font-semibold text-slate-700 shrink-0">0%</span>
                 </div>
-                <p id="loadingSubtitle" class="text-xs font-mono text-slate-500 truncate w-full mb-3.5">
-                    Please wait
-                </p>
-                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <p id="loadingSubtitle" class="text-xs font-mono text-slate-500 truncate w-full mb-3.5"></p>
+                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div id="progressFill" class="h-full bg-slate-900 transition-all duration-150 rounded-full" style="width: 0%;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Clean Page Preview Lightbox Modal -->
-    <div id="inspectorModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-6">
+    <!-- Simple Page Preview Lightbox Modal (Opened by tapping any card thumbnail) -->
+    <div id="previewModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-6">
         <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-            <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
+            <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <h3 id="inspectorTitle" class="text-sm font-bold text-slate-900 truncate">Preview</h3>
-                    <p id="inspectorMeta" class="text-xs font-mono tabular-nums text-slate-500">Page 1</p>
+                    <h3 id="previewTitle" class="text-sm font-bold text-slate-900 truncate">Preview</h3>
+                    <p id="previewMeta" class="text-xs font-mono tabular-nums text-slate-500">Page 1 of 1</p>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" id="inspectorRotateBtn" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 whitespace-nowrap">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                        <span>Rotate</span>
-                    </button>
-                    <button type="button" id="inspectorCloseBtn" aria-label="Close preview" class="min-h-[36px] min-w-[36px] rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
+                <button type="button" id="closePreviewBtn" class="w-9 h-9 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center">
+                    ✕
+                </button>
             </div>
-
             <div class="flex-1 bg-slate-100 overflow-auto p-4 flex items-center justify-center min-h-[280px]">
-                <img id="inspectorImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Page Preview" referrerpolicy="no-referrer"
-                    class="max-w-full max-h-[64vh] object-contain bg-white shadow-md rounded thumb-rotatable">
+                <img id="previewImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Page Preview" referrerpolicy="no-referrer"
+                    class="max-w-full max-h-[65vh] object-contain bg-white shadow-md rounded thumb-rotatable">
             </div>
-
-            <div class="px-4 py-3 border-t border-slate-200 bg-white flex items-center justify-between gap-4 shrink-0">
-                <button type="button" id="inspectorPrevPageBtn" class="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:pointer-events-none rounded-lg">
+            <div id="previewFooter" class="px-4 py-2.5 border-t border-slate-200 bg-white flex items-center justify-between gap-3">
+                <button type="button" id="prevPageBtn" class="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:pointer-events-none rounded-lg">
                     Previous
                 </button>
-                <span id="inspectorPageIndicator" class="text-xs font-mono tabular-nums text-slate-600">
-                    1 / 1
-                </span>
-                <button type="button" id="inspectorNextPageBtn" class="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:pointer-events-none rounded-lg">
+                <span id="previewPageIndicator" class="text-xs font-mono tabular-nums text-slate-600">1 / 1</span>
+                <button type="button" id="nextPageBtn" class="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-35 disabled:pointer-events-none rounded-lg">
                     Next
                 </button>
             </div>
@@ -442,74 +339,83 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         let workspaceItems = [];
-        let viewMode = 'grid'; // 'grid' | 'list'
         let mergedPdfBlobUrl = null;
         let mergedPdfBytesCache = null;
         let mergedPageCount = 0;
 
-        let activeInspectorItem = null;
-        let activeInspectorPageNum = 1;
-        let isInspectingMergedOutput = false;
+        // Preview Modal State
+        let activePreviewItem = null;
+        let activePreviewPageNum = 1;
 
         // DOM References
         const fileInput = document.getElementById('fileInput');
-        const emptyUploadView = document.getElementById('emptyUploadView');
-        const activeWorkspaceView = document.getElementById('activeWorkspaceView');
-        const heroDropZone = document.getElementById('heroDropZone');
+        const dropZone = document.getElementById('dropZone');
+        const emptyStateView = document.getElementById('emptyStateView');
+        const workspaceView = document.getElementById('workspaceView');
         const itemsContainer = document.getElementById('itemsContainer');
-        const bottomActionBar = document.getElementById('bottomActionBar');
-        const mergedReadyBanner = document.getElementById('mergedReadyBanner');
+        const unifiedActionBar = document.getElementById('unifiedActionBar');
+        const headerSummary = document.getElementById('headerSummary');
+        const activeSettingsSummary = document.getElementById('activeSettingsSummary');
 
-        const statItemsCount = document.getElementById('statItemsCount');
-        const statPagesCount = document.getElementById('statPagesCount');
-        const mainMergeBtn = document.getElementById('mainMergeBtn');
-        const mainMergeBtnText = document.getElementById('mainMergeBtnText');
+        // Unified Bar Buttons
+        const barAddBtn = document.getElementById('barAddBtn');
+        const barSplitBtn = document.getElementById('barSplitBtn');
+        const barOptionsBtn = document.getElementById('barOptionsBtn');
+        const barClearBtn = document.getElementById('barClearBtn');
+        const barMergeBtn = document.getElementById('barMergeBtn');
+        const barMergeBtnText = document.getElementById('barMergeBtnText');
 
-        // Modals
+        // Options Modal
         const optionsModal = document.getElementById('optionsModal');
+        const closeOptionsBtn = document.getElementById('closeOptionsBtn');
+        const saveOptionsBtn = document.getElementById('saveOptionsBtn');
+        const resetOptionsBtn = document.getElementById('resetOptionsBtn');
+        const outputFilenameInput = document.getElementById('outputFilename');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const pageMarginSelect = document.getElementById('pageMarginSelect');
+        const pageNumberSelect = document.getElementById('pageNumberSelect');
+        const watermarkInput = document.getElementById('watermarkInput');
+
+        // Loading Overlay
         const loadingOverlay = document.getElementById('loadingOverlay');
         const loadingTitle = document.getElementById('loadingTitle');
         const loadingSubtitle = document.getElementById('loadingSubtitle');
         const loadingPercent = document.getElementById('loadingPercent');
         const progressFill = document.getElementById('progressFill');
 
-        // Option Fields
-        const outputFilenameInput = document.getElementById('outputFilename');
-        const pageSizeSelect = document.getElementById('pageSizeSelect');
-        const imageFitSelect = document.getElementById('imageFitSelect');
-        const pageMarginSelect = document.getElementById('pageMarginSelect');
-        const pageNumberSelect = document.getElementById('pageNumberSelect');
-        const watermarkInput = document.getElementById('watermarkInput');
+        // Preview Modal
+        const previewModal = document.getElementById('previewModal');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewMeta = document.getElementById('previewMeta');
+        const previewImage = document.getElementById('previewImage');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const previewPageIndicator = document.getElementById('previewPageIndicator');
 
-        // Inspector Fields
-        const inspectorModal = document.getElementById('inspectorModal');
-        const inspectorTitle = document.getElementById('inspectorTitle');
-        const inspectorMeta = document.getElementById('inspectorMeta');
-        const inspectorImage = document.getElementById('inspectorImage');
-        const inspectorRotateBtn = document.getElementById('inspectorRotateBtn');
-        const inspectorCloseBtn = document.getElementById('inspectorCloseBtn');
-        const inspectorPrevPageBtn = document.getElementById('inspectorPrevPageBtn');
-        const inspectorNextPageBtn = document.getElementById('inspectorNextPageBtn');
-        const inspectorPageIndicator = document.getElementById('inspectorPageIndicator');
+        // Merged Banner
+        const mergedBanner = document.getElementById('mergedBanner');
+        const mergedBannerTitle = document.getElementById('mergedBannerTitle');
+        const mergedBannerMeta = document.getElementById('mergedBannerMeta');
+        const previewMergedBtn = document.getElementById('previewMergedBtn');
+        const downloadMergedBtn = document.getElementById('downloadMergedBtn');
 
-        // Initialize SortableJS with live sequence badge updates
+        // Initialize SortableJS with live glitch-free sequence updates
         new Sortable(itemsContainer, {
-            animation: 160,
+            animation: 180,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             dragClass: 'sortable-drag',
             delay: 120,
             delayOnTouchOnly: true,
             touchStartThreshold: 5,
-            filter: 'input, button, .no-drag',
+            filter: 'button, .no-drag',
             preventOnFilter: false,
-            onChange: () => {
-                syncSequenceBadgesFromDOM();
-            },
+            onChange: () => syncSequenceBadgesFromDOM(),
             onSort: () => {
                 syncStateOrderFromDOM();
                 syncSequenceBadgesFromDOM();
-                invalidateMergedBanner();
+                mergedBanner.classList.add('hidden');
             },
             onEnd: () => {
                 syncStateOrderFromDOM();
@@ -539,16 +445,14 @@
         function showToast(message) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = 'pointer-events-auto bg-slate-900 text-white border border-slate-800 rounded-xl px-4 py-3 shadow-lg text-xs font-medium flex items-center justify-between gap-3';
+            toast.className = 'pointer-events-auto bg-slate-900 text-white rounded-xl px-4 py-3 shadow-lg text-xs font-medium flex items-center justify-between gap-3';
             toast.innerHTML = `
                 <span class="truncate">${escapeHtml(message)}</span>
-                <button type="button" class="text-white/70 hover:text-white p-0.5 shrink-0" aria-label="Close">✕</button>
+                <button type="button" class="text-white/70 hover:text-white shrink-0" aria-label="Close">✕</button>
             `;
             toast.querySelector('button').onclick = () => toast.remove();
             container.appendChild(toast);
-            setTimeout(() => {
-                if (toast.parentNode) toast.remove();
-            }, 3500);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3500);
         }
 
         function showLoading(title, subtitle, percent) {
@@ -564,36 +468,6 @@
         function hideLoading() {
             loadingOverlay.classList.add('hidden');
             loadingOverlay.classList.remove('flex');
-        }
-
-        function parsePageRange(rangeStr, totalPages) {
-            const clean = (rangeStr || '').trim();
-            if (!clean) {
-                return Array.from({ length: totalPages }, (_, i) => i + 1);
-            }
-            const pages = [];
-            const parts = clean.split(',');
-            for (const rawPart of parts) {
-                const part = rawPart.trim();
-                if (!part) continue;
-                if (part.includes('-')) {
-                    const [startStr, endStr] = part.split('-').map(s => s.trim());
-                    const start = parseInt(startStr, 10);
-                    const end = parseInt(endStr, 10);
-                    if (!isNaN(start) && !isNaN(end)) {
-                        const step = start <= end ? 1 : -1;
-                        for (let p = start; step > 0 ? p <= end : p >= end; p += step) {
-                            if (p >= 1 && p <= totalPages) pages.push(p);
-                        }
-                    }
-                } else {
-                    const num = parseInt(part, 10);
-                    if (!isNaN(num) && num >= 1 && num <= totalPages) {
-                        pages.push(num);
-                    }
-                }
-            }
-            return pages.length > 0 ? pages : Array.from({ length: totalPages }, (_, i) => i + 1);
         }
 
         async function renderPdfPageThumbnail(arrayBuffer, pageNumber = 1, scale = 0.55) {
@@ -618,14 +492,14 @@
             const files = Array.from(fileList || []);
             if (files.length === 0) return;
 
-            showLoading('Adding Files', 'Reading files...', 5);
+            showLoading('Loading files...', '', 5);
             await yieldToUI();
 
             const rejected = [];
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const pct = Math.round(((i + 0.2) / files.length) * 92);
+                const pct = Math.round(((i + 0.2) / files.length) * 95);
                 showLoading(`Loading ${i + 1} of ${files.length}`, file.name, pct);
                 await yieldToUI();
 
@@ -650,7 +524,6 @@
                         }
 
                         const { dataUrl, pageCount } = await renderPdfPageThumbnail(arrayBuffer, 1, 0.55);
-
                         workspaceItems.push({
                             id,
                             name: file.name,
@@ -659,7 +532,6 @@
                             sizeBytes: file.size,
                             arrayBuffer,
                             totalPages: pageCount,
-                            pageRangeInput: '',
                             selectedPages: Array.from({ length: pageCount }, (_, idx) => idx + 1),
                             rotation: 0,
                             thumbUrl: dataUrl,
@@ -670,7 +542,6 @@
                     } else if (isImage) {
                         const blob = new Blob([arrayBuffer], { type: file.type || 'image/png' });
                         const thumbUrl = URL.createObjectURL(blob);
-
                         workspaceItems.push({
                             id,
                             name: file.name,
@@ -679,7 +550,6 @@
                             sizeBytes: file.size,
                             arrayBuffer,
                             totalPages: 1,
-                            pageRangeInput: '1',
                             selectedPages: [1],
                             rotation: 0,
                             thumbUrl,
@@ -695,12 +565,12 @@
             }
 
             if (fileInput) fileInput.value = '';
-            invalidateMergedBanner();
+            mergedBanner.classList.add('hidden');
             renderWorkspace();
             hideLoading();
 
             if (rejected.length > 0) {
-                showToast(`Could not open: ${rejected.join(', ')}`);
+                showToast(`Skipped locked or unsupported file: ${rejected.join(', ')}`);
             }
         }
 
@@ -709,17 +579,17 @@
                 el => el.classList.contains('doc-card') && !el.classList.contains('sortable-drag') && !el.classList.contains('sortable-fallback')
             );
             const orderedIds = domCards.map(el => el.getAttribute('data-id'));
-            const itemMap = new Map(workspaceItems.map(item => [item.id, item]));
-            const newOrder = [];
+            const map = new Map(workspaceItems.map(item => [item.id, item]));
+            const next = [];
             orderedIds.forEach(id => {
-                if (itemMap.has(id)) {
-                    newOrder.push(itemMap.get(id));
-                    itemMap.delete(id);
+                if (map.has(id)) {
+                    next.push(map.get(id));
+                    map.delete(id);
                 }
             });
-            itemMap.forEach(item => newOrder.push(item));
-            workspaceItems = newOrder;
-            updateStatsAndViews();
+            map.forEach(item => next.push(item));
+            workspaceItems = next;
+            updateViewVisibilityAndCounts();
         }
 
         function syncSequenceBadgesFromDOM() {
@@ -727,389 +597,221 @@
                 el => el.classList.contains('doc-card') && !el.classList.contains('sortable-drag') && !el.classList.contains('sortable-fallback')
             );
             let ghostIndex = -1;
-            activeCards.forEach((card, index) => {
-                const numStr = String(index + 1);
+            activeCards.forEach((card, idx) => {
                 const badge = card.querySelector('.seq-number');
-                if (badge) badge.textContent = numStr;
-                if (card.classList.contains('sortable-ghost')) {
-                    ghostIndex = index;
-                }
-                const prevBtn = card.querySelector('.move-prev-btn');
-                const nextBtn = card.querySelector('.move-next-btn');
-                if (prevBtn) prevBtn.disabled = (index === 0);
-                if (nextBtn) nextBtn.disabled = (index === activeCards.length - 1);
+                if (badge) badge.textContent = idx + 1;
+                if (card.classList.contains('sortable-ghost')) ghostIndex = idx;
             });
-
             if (ghostIndex !== -1) {
-                const dragClone = document.querySelector('.sortable-drag .seq-number');
-                if (dragClone) {
-                    dragClone.textContent = String(ghostIndex + 1);
-                }
+                const dragBadge = document.querySelector('.sortable-drag .seq-number');
+                if (dragBadge) dragBadge.textContent = ghostIndex + 1;
             }
         }
 
         function renderWorkspace() {
-            const viewGridBtn = document.getElementById('viewGridBtn');
-            const viewListBtn = document.getElementById('viewListBtn');
-
-            if (viewMode === 'grid') {
-                itemsContainer.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4';
-                viewGridBtn.className = 'min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-xs flex items-center gap-1.5 whitespace-nowrap';
-                viewListBtn.className = 'min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 flex items-center gap-1.5 whitespace-nowrap';
-            } else {
-                itemsContainer.className = 'flex flex-col gap-2';
-                viewListBtn.className = 'min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-xs flex items-center gap-1.5 whitespace-nowrap';
-                viewGridBtn.className = 'min-h-[34px] px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 flex items-center gap-1.5 whitespace-nowrap';
-            }
-
             itemsContainer.innerHTML = '';
 
             workspaceItems.forEach((item, index) => {
-                const seqStr = String(index + 1);
                 const card = document.createElement('div');
                 card.setAttribute('data-id', item.id);
+                card.className = 'doc-card bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between transition-shadow hover:shadow-md select-none cursor-grab active:cursor-grabbing';
 
-                const pageLabel = item.kind === 'pdf'
-                    ? (item.isSinglePageSlice
-                        ? `Page ${item.sourcePageNumber}`
-                        : `${item.selectedPages.length}p`)
-                    : 'IMG';
+                const metaLabel = item.kind === 'pdf'
+                    ? (item.isSinglePageSlice ? `Page ${item.sourcePageNumber}` : `${item.totalPages} ${item.totalPages === 1 ? 'page' : 'pages'}`)
+                    : 'Photo';
 
-                const canSplit = item.kind === 'pdf' && !item.isSinglePageSlice && item.totalPages > 1;
-                const showRange = item.kind === 'pdf' && !item.isSinglePageSlice && item.totalPages > 1;
+                card.innerHTML = `
+                    <!-- Card Top Header: Sequence Badge + Remove Button ONLY -->
+                    <div class="px-3 py-2 flex items-center justify-between bg-white border-b border-slate-100">
+                        <span class="seq-number font-mono tabular-nums text-xs font-bold text-slate-900 bg-slate-100 w-6 h-6 rounded-lg flex items-center justify-center">
+                            ${index + 1}
+                        </span>
+                        <button type="button" class="remove-btn no-drag w-7 h-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors" title="Remove">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
 
-                if (viewMode === 'grid') {
-                    card.className = 'doc-card bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col justify-between transition-shadow hover:border-slate-400 select-none cursor-grab active:cursor-grabbing';
-                    card.innerHTML = `
-                        <div>
-                            <!-- Top Bar: Number + Move Arrows + Delete -->
-                            <div class="px-2.5 py-1.5 border-b border-slate-100 flex items-center justify-between gap-1 bg-white">
-                                <div class="flex items-center gap-1.5 min-w-0">
-                                    <span class="seq-number font-mono tabular-nums text-xs font-bold text-slate-900">${seqStr}</span>
-                                    <span class="text-slate-300" aria-hidden="true">·</span>
-                                    <span class="text-[11px] font-medium text-slate-500 truncate">${escapeHtml(pageLabel)}</span>
-                                </div>
-                                <div class="flex items-center gap-0.5 shrink-0">
-                                    <button type="button" class="move-prev-btn no-drag w-7 h-7 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center" title="Move left" ${index === 0 ? 'disabled' : ''}>
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                    </button>
-                                    <button type="button" class="move-next-btn no-drag w-7 h-7 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center" title="Move right" ${index === workspaceItems.length - 1 ? 'disabled' : ''}>
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                    </button>
-                                    <button type="button" class="remove-item-btn no-drag w-7 h-7 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center" title="Remove">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- Thumbnail Preview (Tap to open full preview) -->
+                    <div class="thumb-trigger h-36 sm:h-44 bg-slate-50 flex items-center justify-center p-3 overflow-hidden cursor-pointer">
+                        <img src="${item.thumbUrl}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer"
+                            style="transform: rotate(${item.rotation}deg);"
+                            class="max-w-full max-h-full object-contain shadow-xs rounded-xs thumb-rotatable pointer-events-none">
+                    </div>
 
-                            <!-- Thumbnail -->
-                            <div class="inspect-btn relative h-36 sm:h-40 bg-slate-50 flex items-center justify-center p-3 overflow-hidden border-b border-slate-100 cursor-pointer group">
-                                <img src="${item.thumbUrl}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer"
-                                    style="transform: rotate(${item.rotation}deg);"
-                                    class="max-w-full max-h-full object-contain shadow-xs rounded-xs thumb-rotatable pointer-events-none">
-                            </div>
-                        </div>
-
-                        <!-- Card Footer -->
-                        <div class="p-2.5 flex flex-col gap-2 bg-white">
-                            <div class="text-xs font-semibold text-slate-800 truncate" title="${escapeHtml(item.name)}">
+                    <!-- Card Bottom: Filename + Single Rotate Button ONLY -->
+                    <div class="p-3 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-semibold text-slate-900 truncate" title="${escapeHtml(item.name)}">
                                 ${escapeHtml(item.name)}
                             </div>
-
-                            ${showRange ? `
-                            <input type="text" value="${escapeHtml(item.pageRangeInput)}" placeholder="Pages: All (1-${item.totalPages})"
-                                class="page-range-input no-drag w-full h-7 px-2 text-[11px] font-mono bg-slate-50 border border-slate-200 rounded-md text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900">
-                            ` : ''}
-
-                            <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-100">
-                                <button type="button" class="rotate-btn no-drag min-h-[32px] px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-100 rounded-md flex items-center gap-1 whitespace-nowrap">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    <span>Rotate</span>
-                                </button>
-
-                                ${canSplit ? `
-                                <button type="button" class="split-pages-btn no-drag min-h-[32px] px-2 py-1 text-[11px] font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-md whitespace-nowrap">
-                                    Split (${item.totalPages})
-                                </button>
-                                ` : `
-                                <button type="button" class="inspect-btn-alt no-drag min-h-[32px] px-2 py-1 text-[11px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md whitespace-nowrap">
-                                    View
-                                </button>
-                                `}
+                            <div class="text-[11px] font-mono tabular-nums text-slate-400 mt-0.5">
+                                ${escapeHtml(metaLabel)} · ${formatBytes(item.sizeBytes)}
                             </div>
                         </div>
-                    `;
-                } else {
-                    card.className = 'doc-card bg-white border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-3 hover:border-slate-400 select-none cursor-grab active:cursor-grabbing';
-                    card.innerHTML = `
-                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                            <span class="seq-number font-mono tabular-nums text-xs font-bold text-slate-900 w-5 text-center shrink-0">${seqStr}</span>
-                            <div class="inspect-btn no-drag w-10 h-12 bg-slate-50 border border-slate-200 rounded-md flex items-center justify-center p-1 shrink-0 overflow-hidden cursor-pointer">
-                                <img src="${item.thumbUrl}" alt="${escapeHtml(item.name)}" referrerpolicy="no-referrer"
-                                    style="transform: rotate(${item.rotation}deg);"
-                                    class="max-w-full max-h-full object-contain thumb-rotatable">
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="text-xs sm:text-sm font-semibold text-slate-900 truncate">${escapeHtml(item.name)}</div>
-                                <div class="text-[11px] font-mono tabular-nums text-slate-500 flex items-center gap-1.5">
-                                    <span>${escapeHtml(pageLabel)}</span>
-                                    <span aria-hidden="true">·</span>
-                                    <span>${formatBytes(item.sizeBytes)}</span>
-                                </div>
-                            </div>
-                        </div>
+                        <button type="button" class="rotate-btn no-drag min-h-[36px] min-w-[36px] px-2.5 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 flex items-center justify-center transition-colors shrink-0" title="Rotate 90°">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
 
-                        <div class="flex items-center gap-1 shrink-0">
-                            ${canSplit ? `
-                            <button type="button" class="split-pages-btn no-drag min-h-[36px] px-2.5 py-1 text-xs font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center">
-                                Split (${item.totalPages})
-                            </button>
-                            ` : ''}
-                            <button type="button" class="rotate-btn no-drag min-h-[36px] px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap">
-                                Rotate
-                            </button>
-                            <button type="button" class="move-prev-btn no-drag min-h-[36px] min-w-[36px] rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-25 flex items-center justify-center" ${index === 0 ? 'disabled' : ''}>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                            </button>
-                            <button type="button" class="move-next-btn no-drag min-h-[36px] min-w-[36px] rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-25 flex items-center justify-center" ${index === workspaceItems.length - 1 ? 'disabled' : ''}>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <button type="button" class="remove-item-btn no-drag min-h-[36px] min-w-[36px] rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                    `;
-                }
+                card.querySelector('.remove-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    workspaceItems = workspaceItems.filter(x => x.id !== item.id);
+                    mergedBanner.classList.add('hidden');
+                    renderWorkspace();
+                };
 
-                // Event Handlers
-                const removeBtn = card.querySelector('.remove-item-btn');
-                if (removeBtn) {
-                    removeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        workspaceItems = workspaceItems.filter(x => x.id !== item.id);
-                        invalidateMergedBanner();
-                        renderWorkspace();
-                    };
-                }
+                card.querySelector('.rotate-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    item.rotation = (item.rotation + 90) % 360;
+                    mergedBanner.classList.add('hidden');
+                    renderWorkspace();
+                };
 
-                const movePrevBtn = card.querySelector('.move-prev-btn');
-                if (movePrevBtn) {
-                    movePrevBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        const idx = workspaceItems.findIndex(x => x.id === item.id);
-                        if (idx > 0) {
-                            [workspaceItems[idx - 1], workspaceItems[idx]] = [workspaceItems[idx], workspaceItems[idx - 1]];
-                            invalidateMergedBanner();
-                            renderWorkspace();
-                        }
-                    };
-                }
-
-                const moveNextBtn = card.querySelector('.move-next-btn');
-                if (moveNextBtn) {
-                    moveNextBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        const idx = workspaceItems.findIndex(x => x.id === item.id);
-                        if (idx !== -1 && idx < workspaceItems.length - 1) {
-                            [workspaceItems[idx + 1], workspaceItems[idx]] = [workspaceItems[idx], workspaceItems[idx + 1]];
-                            invalidateMergedBanner();
-                            renderWorkspace();
-                        }
-                    };
-                }
-
-                const rotateBtn = card.querySelector('.rotate-btn');
-                if (rotateBtn) {
-                    rotateBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        item.rotation = (item.rotation + 90) % 360;
-                        invalidateMergedBanner();
-                        renderWorkspace();
-                    };
-                }
-
-                const splitBtn = card.querySelector('.split-pages-btn');
-                if (splitBtn) {
-                    splitBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        expandSinglePdfToPages(item.id);
-                    };
-                }
-
-                const rangeInput = card.querySelector('.page-range-input');
-                if (rangeInput) {
-                    rangeInput.onchange = (e) => {
-                        item.pageRangeInput = e.target.value;
-                        item.selectedPages = parsePageRange(item.pageRangeInput, item.totalPages);
-                        invalidateMergedBanner();
-                        renderWorkspace();
-                    };
-                }
-
-                card.querySelectorAll('.inspect-btn, .inspect-btn-alt').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        openInspectorModal(item);
-                    };
-                });
+                card.querySelector('.thumb-trigger').onclick = () => {
+                    openPreviewModal(item);
+                };
 
                 itemsContainer.appendChild(card);
             });
 
-            updateStatsAndViews();
+            updateViewVisibilityAndCounts();
         }
 
-        function updateStatsAndViews() {
+        function updateViewVisibilityAndCounts() {
             const count = workspaceItems.length;
             const totalPages = workspaceItems.reduce((sum, item) => sum + item.selectedPages.length, 0);
+            const hasMultiPagePdf = workspaceItems.some(x => x.kind === 'pdf' && !x.isSinglePageSlice && x.totalPages > 1);
 
-            statItemsCount.textContent = `${count} ${count === 1 ? 'file' : 'files'}`;
-            statPagesCount.textContent = `${totalPages} ${totalPages === 1 ? 'page' : 'pages'}`;
+            if (count === 0) {
+                emptyStateView.classList.remove('hidden');
+                workspaceView.classList.add('hidden');
+                unifiedActionBar.classList.add('hidden');
+                headerSummary.textContent = 'PDF & Image Merger';
+            } else {
+                emptyStateView.classList.add('hidden');
+                workspaceView.classList.remove('hidden');
+                unifiedActionBar.classList.remove('hidden');
+                headerSummary.textContent = `${count} ${count === 1 ? 'file' : 'files'} · ${totalPages} ${totalPages === 1 ? 'page' : 'pages'}`;
+                barMergeBtnText.textContent = `Merge PDF (${totalPages}p)`;
+                barSplitBtn.classList.toggle('hidden', !hasMultiPagePdf);
+            }
 
-            const hasItems = count > 0;
-            emptyUploadView.classList.toggle('hidden', hasItems);
-            activeWorkspaceView.classList.toggle('hidden', !hasItems);
-            bottomActionBar.classList.toggle('hidden', !hasItems);
-
-            mainMergeBtnText.textContent = `Merge PDF (${totalPages} ${totalPages === 1 ? 'Page' : 'Pages'})`;
+            // Update subtle active options summary
+            const parts = [];
+            if (pageSizeSelect.value !== 'original') parts.push(pageSizeSelect.options[pageSizeSelect.selectedIndex].text);
+            if (pageNumberSelect.value !== 'none') parts.push('Page numbers');
+            if (watermarkInput.value.trim()) parts.push('Watermark');
+            activeSettingsSummary.textContent = parts.length > 0 ? parts.join(' · ') : '';
         }
 
-        function invalidateMergedBanner() {
-            mergedReadyBanner.classList.add('hidden');
-        }
+        async function splitAllMultiPagePdfs() {
+            const targets = workspaceItems.filter(x => x.kind === 'pdf' && !x.isSinglePageSlice && x.totalPages > 1);
+            if (targets.length === 0) return;
 
-        async function expandSinglePdfToPages(itemId) {
-            const idx = workspaceItems.findIndex(x => x.id === itemId);
-            if (idx === -1) return;
-            const item = workspaceItems[idx];
-            if (item.kind !== 'pdf' || item.totalPages <= 1) return;
+            for (const item of targets) {
+                const idx = workspaceItems.findIndex(x => x.id === item.id);
+                if (idx === -1) continue;
 
-            const pagesToExtract = item.selectedPages.length > 0
-                ? item.selectedPages
-                : Array.from({ length: item.totalPages }, (_, i) => i + 1);
-
-            showLoading('Splitting PDF', item.name, 10);
-            await yieldToUI();
-
-            const expanded = [];
-            const baseName = item.name.replace(/\.pdf$/i, '');
-
-            for (let i = 0; i < pagesToExtract.length; i++) {
-                const pageNum = pagesToExtract[i];
-                const pct = Math.round(((i + 1) / pagesToExtract.length) * 95);
-                showLoading(`Page ${pageNum} of ${item.totalPages}`, item.name, pct);
+                showLoading('Splitting pages...', item.name, 10);
                 await yieldToUI();
 
-                const { dataUrl } = await renderPdfPageThumbnail(item.arrayBuffer, pageNum, 0.55);
-                expanded.push({
-                    id: 'page-' + Date.now().toString(36) + '-' + i + '-' + Math.random().toString(36).slice(2, 6),
-                    name: `${baseName} (P.${pageNum})`,
-                    kind: 'pdf',
-                    mimeType: 'application/pdf',
-                    sizeBytes: Math.round(item.sizeBytes / item.totalPages),
-                    arrayBuffer: item.arrayBuffer,
-                    totalPages: item.totalPages,
-                    pageRangeInput: String(pageNum),
-                    selectedPages: [pageNum],
-                    rotation: item.rotation,
-                    thumbUrl: dataUrl,
-                    requiresRasterFallback: item.requiresRasterFallback,
-                    isSinglePageSlice: true,
-                    sourcePageNumber: pageNum
-                });
+                const expanded = [];
+                const baseName = item.name.replace(/\.pdf$/i, '');
+
+                for (let p = 1; p <= item.totalPages; p++) {
+                    const pct = Math.round((p / item.totalPages) * 95);
+                    showLoading(`Splitting Page ${p} of ${item.totalPages}`, item.name, pct);
+                    await yieldToUI();
+
+                    const { dataUrl } = await renderPdfPageThumbnail(item.arrayBuffer, p, 0.55);
+                    expanded.push({
+                        id: 'page-' + Date.now().toString(36) + '-' + p + '-' + Math.random().toString(36).slice(2, 6),
+                        name: `${baseName} (p.${p})`,
+                        kind: 'pdf',
+                        mimeType: 'application/pdf',
+                        sizeBytes: Math.round(item.sizeBytes / item.totalPages),
+                        arrayBuffer: item.arrayBuffer,
+                        totalPages: item.totalPages,
+                        selectedPages: [p],
+                        rotation: item.rotation,
+                        thumbUrl: dataUrl,
+                        requiresRasterFallback: item.requiresRasterFallback,
+                        isSinglePageSlice: true,
+                        sourcePageNumber: p
+                    });
+                }
+                workspaceItems.splice(idx, 1, ...expanded);
             }
 
-            workspaceItems.splice(idx, 1, ...expanded);
-            invalidateMergedBanner();
+            mergedBanner.classList.add('hidden');
             renderWorkspace();
             hideLoading();
-            showToast(`Split into ${expanded.length} pages`);
+            showToast('Split PDFs into individual pages');
         }
 
-        async function expandAllMultiPagePdfs() {
-            const ids = workspaceItems
-                .filter(x => x.kind === 'pdf' && !x.isSinglePageSlice && x.totalPages > 1)
-                .map(x => x.id);
-
-            if (ids.length === 0) {
-                showToast('Add a multi-page PDF first to split its pages');
-                return;
-            }
-            for (const id of ids) {
-                await expandSinglePdfToPages(id);
-            }
+        // Preview Modal
+        async function openPreviewModal(item) {
+            activePreviewItem = item;
+            activePreviewPageNum = item.isSinglePageSlice && item.sourcePageNumber ? item.sourcePageNumber : 1;
+            previewModal.classList.remove('hidden');
+            previewModal.classList.add('flex');
+            await updatePreviewModalContent();
         }
 
-        async function openInspectorModal(item, isMergedPreview = false) {
-            isInspectingMergedOutput = isMergedPreview;
-            activeInspectorItem = item;
-            activeInspectorPageNum = item.isSinglePageSlice && item.sourcePageNumber ? item.sourcePageNumber : 1;
-
-            inspectorModal.classList.remove('hidden');
-            inspectorModal.classList.add('flex');
-            inspectorRotateBtn.classList.toggle('hidden', isMergedPreview);
-
-            await updateInspectorView();
-        }
-
-        async function updateInspectorView() {
-            if (!activeInspectorItem) return;
-            const item = activeInspectorItem;
-            inspectorTitle.textContent = item.name;
-            inspectorImage.style.transform = `rotate(${item.rotation || 0}deg)`;
+        async function updatePreviewModalContent() {
+            if (!activePreviewItem) return;
+            const item = activePreviewItem;
+            previewTitle.textContent = item.name;
+            previewImage.style.transform = `rotate(${item.rotation || 0}deg)`;
 
             if (item.kind === 'image') {
-                inspectorMeta.textContent = formatBytes(item.sizeBytes);
-                inspectorPageIndicator.textContent = '1 / 1';
-                inspectorPrevPageBtn.disabled = true;
-                inspectorNextPageBtn.disabled = true;
-                inspectorImage.src = item.thumbUrl;
+                previewMeta.textContent = formatBytes(item.sizeBytes);
+                previewPageIndicator.textContent = '1 / 1';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                previewImage.src = item.thumbUrl;
                 return;
             }
 
             const total = item.totalPages;
-            inspectorMeta.textContent = `Page ${activeInspectorPageNum} of ${total}`;
-            inspectorPageIndicator.textContent = `${activeInspectorPageNum} / ${total}`;
-            inspectorPrevPageBtn.disabled = activeInspectorPageNum <= 1;
-            inspectorNextPageBtn.disabled = activeInspectorPageNum >= total;
+            previewMeta.textContent = `Page ${activePreviewPageNum} of ${total}`;
+            previewPageIndicator.textContent = `${activePreviewPageNum} / ${total}`;
+            prevPageBtn.disabled = activePreviewPageNum <= 1;
+            nextPageBtn.disabled = activePreviewPageNum >= total;
 
             try {
-                const { dataUrl } = await renderPdfPageThumbnail(item.arrayBuffer, activeInspectorPageNum, 1.3);
-                inspectorImage.src = dataUrl;
+                const { dataUrl } = await renderPdfPageThumbnail(item.arrayBuffer, activePreviewPageNum, 1.3);
+                previewImage.src = dataUrl;
             } catch (e) {
-                inspectorImage.src = item.thumbUrl;
+                previewImage.src = item.thumbUrl;
             }
         }
 
-        inspectorCloseBtn.onclick = () => {
-            inspectorModal.classList.add('hidden');
-            inspectorModal.classList.remove('flex');
-            activeInspectorItem = null;
+        closePreviewBtn.onclick = () => {
+            previewModal.classList.add('hidden');
+            previewModal.classList.remove('flex');
+            activePreviewItem = null;
         };
-        inspectorModal.onclick = (e) => {
-            if (e.target === inspectorModal) inspectorCloseBtn.click();
-        };
-        inspectorPrevPageBtn.onclick = async () => {
-            if (activeInspectorItem && activeInspectorPageNum > 1) {
-                activeInspectorPageNum--;
-                await updateInspectorView();
+        previewModal.onclick = (e) => { if (e.target === previewModal) closePreviewBtn.click(); };
+        prevPageBtn.onclick = async () => {
+            if (activePreviewItem && activePreviewPageNum > 1) {
+                activePreviewPageNum--;
+                await updatePreviewModalContent();
             }
         };
-        inspectorNextPageBtn.onclick = async () => {
-            if (activeInspectorItem && activeInspectorPageNum < activeInspectorItem.totalPages) {
-                activeInspectorPageNum++;
-                await updateInspectorView();
-            }
-        };
-        inspectorRotateBtn.onclick = () => {
-            if (activeInspectorItem && !isInspectingMergedOutput) {
-                activeInspectorItem.rotation = (activeInspectorItem.rotation + 90) % 360;
-                inspectorImage.style.transform = `rotate(${activeInspectorItem.rotation}deg)`;
-                invalidateMergedBanner();
-                renderWorkspace();
+        nextPageBtn.onclick = async () => {
+            if (activePreviewItem && activePreviewPageNum < activePreviewItem.totalPages) {
+                activePreviewPageNum++;
+                await updatePreviewModalContent();
             }
         };
 
+        // Rasterize Image with Rotation
         async function rasterizeImageToBytes(arrayBuffer, mimeType, rotationDegrees = 0) {
             return new Promise((resolve, reject) => {
                 const blob = new Blob([arrayBuffer], { type: mimeType || 'image/png' });
@@ -1118,10 +820,10 @@
                 img.onload = async () => {
                     try {
                         const rad = (rotationDegrees * Math.PI) / 180;
-                        const swapDims = rotationDegrees === 90 || rotationDegrees === 270;
+                        const swap = rotationDegrees === 90 || rotationDegrees === 270;
                         const canvas = document.createElement('canvas');
-                        canvas.width = swapDims ? img.naturalHeight : img.naturalWidth;
-                        canvas.height = swapDims ? img.naturalWidth : img.naturalHeight;
+                        canvas.width = swap ? img.naturalHeight : img.naturalWidth;
+                        canvas.height = swap ? img.naturalWidth : img.naturalHeight;
                         const ctx = canvas.getContext('2d');
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1130,7 +832,7 @@
                         ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
                         URL.revokeObjectURL(url);
 
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.93);
                         const bytes = await fetch(dataUrl).then(r => r.arrayBuffer());
                         resolve({ bytes, width: canvas.width, height: canvas.height });
                     } catch (err) {
@@ -1138,10 +840,7 @@
                         reject(err);
                     }
                 };
-                img.onerror = (err) => {
-                    URL.revokeObjectURL(url);
-                    reject(err);
-                };
+                img.onerror = (err) => { URL.revokeObjectURL(url); reject(err); };
                 img.src = url;
             });
         }
@@ -1151,7 +850,6 @@
                 case 'a4-portrait': return [595.28, 841.89];
                 case 'a4-landscape': return [841.89, 595.28];
                 case 'letter-portrait': return [612, 792];
-                case 'letter-landscape': return [792, 612];
                 default: return null;
             }
         }
@@ -1160,24 +858,18 @@
             if (workspaceItems.length === 0) return;
 
             try {
-                showLoading('Merging PDF', 'Starting...', 5);
+                showLoading('Merging PDF...', 'Preparing pages', 5);
                 await yieldToUI();
 
                 const { PDFDocument, StandardFonts, rgb, degrees } = PDFLib;
                 const mergedPdf = await PDFDocument.create();
-
-                const cleanBaseName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '');
-                mergedPdf.setTitle(cleanBaseName);
-                mergedPdf.setCreator('Pdfy (alsagar.tech)');
-
                 const targetDimensions = getStandardPageDimensions(pageSizeSelect.value);
-                const imageFit = imageFitSelect.value;
                 const marginPts = parseFloat(pageMarginSelect.value) || 0;
 
                 for (let i = 0; i < workspaceItems.length; i++) {
                     const item = workspaceItems[i];
-                    const progress = Math.round(((i + 0.2) / workspaceItems.length) * 85);
-                    showLoading(`Merging ${i + 1} of ${workspaceItems.length}`, item.name, progress);
+                    const pct = Math.round(((i + 0.2) / workspaceItems.length) * 85);
+                    showLoading(`Merging ${i + 1} of ${workspaceItems.length}`, item.name, pct);
                     await yieldToUI();
 
                     if (item.kind === 'pdf') {
@@ -1186,9 +878,7 @@
                         if (item.requiresRasterFallback) {
                             const dataCopy = new Uint8Array(item.arrayBuffer.slice(0));
                             const fallbackPdf = await pdfjsLib.getDocument({ data: dataCopy }).promise;
-
                             for (const pNum of pagesToInclude) {
-                                if (pNum < 1 || pNum > fallbackPdf.numPages) continue;
                                 const page = await fallbackPdf.getPage(pNum);
                                 const viewport = page.getViewport({ scale: 2.0, rotation: item.rotation || 0 });
                                 const canvas = document.createElement('canvas');
@@ -1196,97 +886,48 @@
                                 canvas.height = viewport.height;
                                 const ctx = canvas.getContext('2d');
                                 await page.render({ canvasContext: ctx, viewport }).promise;
-                                const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.92);
-                                const jpgBytes = await fetch(jpgDataUrl).then(r => r.arrayBuffer());
+                                const jpgBytes = await fetch(canvas.toDataURL('image/jpeg', 0.92)).then(r => r.arrayBuffer());
                                 const embeddedJpg = await mergedPdf.embedJpg(jpgBytes);
-
                                 const [pw, ph] = targetDimensions || [embeddedJpg.width / 2, embeddedJpg.height / 2];
                                 const newPage = mergedPdf.addPage([pw, ph]);
                                 const scale = Math.min(pw / embeddedJpg.width, ph / embeddedJpg.height);
                                 const drawW = embeddedJpg.width * scale;
                                 const drawH = embeddedJpg.height * scale;
-                                newPage.drawImage(embeddedJpg, {
-                                    x: (pw - drawW) / 2,
-                                    y: (ph - drawH) / 2,
-                                    width: drawW,
-                                    height: drawH
-                                });
+                                newPage.drawImage(embeddedJpg, { x: (pw - drawW) / 2, y: (ph - drawH) / 2, width: drawW, height: drawH });
                             }
                             await fallbackPdf.destroy();
                         } else {
                             const srcPdf = await PDFDocument.load(item.arrayBuffer.slice(0));
-                            const zeroBasedIndices = pagesToInclude
-                                .map(p => p - 1)
-                                .filter(idx => idx >= 0 && idx < srcPdf.getPageCount());
+                            const zeroIndices = pagesToInclude.map(p => p - 1).filter(idx => idx >= 0 && idx < srcPdf.getPageCount());
+                            const copiedPages = await mergedPdf.copyPages(srcPdf, zeroIndices);
 
-                            if (targetDimensions) {
-                                const [pw, ph] = targetDimensions;
-                                const copiedPages = await mergedPdf.copyPages(srcPdf, zeroBasedIndices);
-                                copiedPages.forEach(copiedPage => {
-                                    const currentRot = copiedPage.getRotation().angle || 0;
-                                    const totalRot = (currentRot + (item.rotation || 0)) % 360;
-                                    copiedPage.setRotation(degrees(totalRot));
+                            copiedPages.forEach(copiedPage => {
+                                const currentRot = copiedPage.getRotation().angle || 0;
+                                const totalRot = (currentRot + (item.rotation || 0)) % 360;
+                                copiedPage.setRotation(degrees(totalRot));
 
+                                if (targetDimensions) {
+                                    const [pw, ph] = targetDimensions;
                                     const { width: origW, height: origH } = copiedPage.getSize();
                                     const effW = (totalRot === 90 || totalRot === 270) ? origH : origW;
                                     const effH = (totalRot === 90 || totalRot === 270) ? origW : origH;
-                                    const uniformScale = Math.min(pw / effW, ph / effH);
-
-                                    copiedPage.scale(uniformScale, uniformScale);
+                                    const scale = Math.min(pw / effW, ph / effH);
+                                    copiedPage.scale(scale, scale);
                                     copiedPage.setSize(pw, ph);
-                                    mergedPdf.addPage(copiedPage);
-                                });
-                            } else {
-                                const copiedPages = await mergedPdf.copyPages(srcPdf, zeroBasedIndices);
-                                copiedPages.forEach(copiedPage => {
-                                    if (item.rotation) {
-                                        const currentRot = copiedPage.getRotation().angle || 0;
-                                        copiedPage.setRotation(degrees((currentRot + item.rotation) % 360));
-                                    }
-                                    mergedPdf.addPage(copiedPage);
-                                });
-                            }
+                                }
+                                mergedPdf.addPage(copiedPage);
+                            });
                         }
                     } else if (item.kind === 'image') {
-                        const { bytes, width: imgW, height: imgH } = await rasterizeImageToBytes(
-                            item.arrayBuffer,
-                            item.mimeType,
-                            item.rotation || 0
-                        );
+                        const { bytes, width: imgW, height: imgH } = await rasterizeImageToBytes(item.arrayBuffer, item.mimeType, item.rotation || 0);
                         const embeddedImage = await mergedPdf.embedJpg(bytes);
-
-                        let pageW, pageH;
-                        if (targetDimensions) {
-                            [pageW, pageH] = targetDimensions;
-                        } else if (imageFit === 'native') {
-                            pageW = imgW + marginPts * 2;
-                            pageH = imgH + marginPts * 2;
-                        } else {
-                            pageW = imgW >= imgH ? 841.89 : 595.28;
-                            pageH = imgW >= imgH ? 595.28 : 841.89;
-                        }
-
+                        const [pageW, pageH] = targetDimensions || (imgW >= imgH ? [841.89, 595.28] : [595.28, 841.89]);
                         const page = mergedPdf.addPage([pageW, pageH]);
                         const availW = Math.max(36, pageW - marginPts * 2);
                         const availH = Math.max(36, pageH - marginPts * 2);
-
-                        let drawW = imgW;
-                        let drawH = imgH;
-
-                        if (imageFit === 'contain') {
-                            const scale = Math.min(availW / imgW, availH / imgH);
-                            drawW = imgW * scale;
-                            drawH = imgH * scale;
-                        } else if (imageFit === 'cover') {
-                            const scale = Math.max(availW / imgW, availH / imgH);
-                            drawW = imgW * scale;
-                            drawH = imgH * scale;
-                        } else if (targetDimensions) {
-                            const scale = Math.min(availW / imgW, availH / imgH);
-                            drawW = imgW * scale;
-                            drawH = imgH * scale;
-                        }
-
+                        const scale = Math.min(availW / imgW, availH / imgH);
+                        const drawW = imgW * scale;
+                        const drawH = imgH * scale;
                         page.drawImage(embeddedImage, {
                             x: (pageW - drawW) / 2,
                             y: (pageH - drawH) / 2,
@@ -1296,88 +937,57 @@
                     }
                 }
 
-                // Apply Optional Page Numbers & Watermark
+                // Stamp Optional Page Numbers & Watermark
                 const pageNumberMode = pageNumberSelect.value;
                 const watermarkText = watermarkInput.value.trim();
                 const allPages = mergedPdf.getPages();
-                const totalMergedPages = allPages.length;
+                const totalMerged = allPages.length;
 
-                if ((pageNumberMode !== 'none' || watermarkText) && totalMergedPages > 0) {
-                    showLoading('Finishing Up', 'Adding page numbers...', 92);
-                    await yieldToUI();
-
-                    const fontRegular = await mergedPdf.embedFont(StandardFonts.Helvetica);
+                if ((pageNumberMode !== 'none' || watermarkText) && totalMerged > 0) {
+                    const fontReg = await mergedPdf.embedFont(StandardFonts.Helvetica);
                     const fontBold = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
 
                     allPages.forEach((page, idx) => {
                         const { width, height } = page.getSize();
-                        const pageNum = idx + 1;
-
                         if (watermarkText) {
-                            const wmFontSize = Math.min(width, height) * 0.075;
-                            const textWidth = fontBold.widthOfTextAtSize(watermarkText, wmFontSize);
+                            const wmSize = Math.min(width, height) * 0.075;
+                            const tw = fontBold.widthOfTextAtSize(watermarkText, wmSize);
                             page.drawText(watermarkText, {
-                                x: (width - textWidth * 0.7) / 2,
-                                y: height / 2 - wmFontSize / 2,
-                                size: wmFontSize,
+                                x: (width - tw * 0.7) / 2,
+                                y: height / 2 - wmSize / 2,
+                                size: wmSize,
                                 font: fontBold,
                                 color: rgb(0.55, 0.58, 0.65),
                                 opacity: 0.16,
                                 rotate: degrees(35)
                             });
                         }
-
                         if (pageNumberMode !== 'none') {
-                            const label = pageNumberMode === 'bottom-right'
-                                ? `Page ${pageNum} of ${totalMergedPages}`
-                                : `${pageNum} / ${totalMergedPages}`;
-                            const fontSize = 9.5;
-                            const textW = fontRegular.widthOfTextAtSize(label, fontSize);
-                            let x = (width - textW) / 2;
-                            let y = 20;
-
-                            if (pageNumberMode === 'bottom-right') {
-                                x = width - textW - 28;
-                                y = 20;
-                            } else if (pageNumberMode === 'top-right') {
-                                x = width - textW - 28;
-                                y = height - 26;
-                            }
-
-                            page.drawText(label, {
-                                x,
-                                y,
-                                size: fontSize,
-                                font: fontRegular,
-                                color: rgb(0.32, 0.36, 0.44)
-                            });
+                            const label = `${idx + 1} / ${totalMerged}`;
+                            const tw = fontReg.widthOfTextAtSize(label, 9.5);
+                            const x = pageNumberMode === 'bottom-right' ? width - tw - 28 : (width - tw) / 2;
+                            page.drawText(label, { x, y: 20, size: 9.5, font: fontReg, color: rgb(0.35, 0.38, 0.45) });
                         }
                     });
                 }
 
-                showLoading('Saving PDF', 'Preparing download...', 98);
+                showLoading('Saving PDF...', '', 98);
                 await yieldToUI();
 
                 const pdfBytes = await mergedPdf.save();
                 mergedPdfBytesCache = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength);
-                mergedPageCount = totalMergedPages;
+                mergedPageCount = totalMerged;
 
                 if (mergedPdfBlobUrl) URL.revokeObjectURL(mergedPdfBlobUrl);
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                mergedPdfBlobUrl = URL.createObjectURL(blob);
+                mergedPdfBlobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
 
-                const finalFileName = `${cleanBaseName}.pdf`;
-                document.getElementById('mergedBannerTitle').textContent = `${finalFileName} is ready!`;
-                document.getElementById('mergedBannerMeta').innerHTML = `
-                    <span>${totalMergedPages} ${totalMergedPages === 1 ? 'page' : 'pages'}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>${formatBytes(pdfBytes.byteLength)}</span>
-                `;
-                mergedReadyBanner.classList.remove('hidden');
+                const cleanName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '') + '.pdf';
+                mergedBannerTitle.textContent = `${cleanName} is ready`;
+                mergedBannerMeta.textContent = `${totalMerged} ${totalMerged === 1 ? 'page' : 'pages'} · ${formatBytes(pdfBytes.byteLength)}`;
+                mergedBanner.classList.remove('hidden');
 
                 hideLoading();
-                triggerPdfDownload(finalFileName);
-                showToast(`Downloaded ${finalFileName}`);
+                triggerDownload(cleanName);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (err) {
                 console.error(err);
@@ -1386,7 +996,7 @@
             }
         }
 
-        function triggerPdfDownload(filename) {
+        function triggerDownload(filename) {
             if (!mergedPdfBlobUrl) return;
             const a = document.createElement('a');
             a.href = mergedPdfBlobUrl;
@@ -1396,73 +1006,30 @@
             a.remove();
         }
 
-        // Options Drawer / Modal Controls
-        function openOptionsModal() {
-            optionsModal.classList.remove('hidden');
-            optionsModal.classList.add('flex');
-        }
-        function closeOptionsModal() {
-            optionsModal.classList.add('hidden');
-            optionsModal.classList.remove('flex');
-        }
-
-        document.getElementById('headerOptionsBtn').onclick = openOptionsModal;
-        document.getElementById('bottomOptionsBtn').onclick = openOptionsModal;
-        document.getElementById('navOptionsLink').onclick = openOptionsModal;
-        document.getElementById('closeOptionsBtn').onclick = closeOptionsModal;
-        document.getElementById('saveOptionsBtn').onclick = () => {
-            invalidateMergedBanner();
-            closeOptionsModal();
-        };
-        optionsModal.onclick = (e) => {
-            if (e.target === optionsModal) closeOptionsModal();
-        };
-        document.getElementById('resetOptionsBtn').onclick = () => {
-            outputFilenameInput.value = 'Pdfy_Merged';
-            pageSizeSelect.value = 'original';
-            imageFitSelect.value = 'contain';
-            pageMarginSelect.value = '20';
-            pageNumberSelect.value = 'none';
-            watermarkInput.value = '';
-            invalidateMergedBanner();
-            showToast('Options reset to default');
-        };
-
-        // File Input & Full-Window Drag-and-Drop
-        heroDropZone.onclick = () => fileInput.click();
-        heroDropZone.onkeydown = (e) => {
+        // Event Listeners
+        dropZone.onclick = () => fileInput.click();
+        dropZone.onkeydown = (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 fileInput.click();
             }
         };
-        document.getElementById('headerAddBtn').onclick = () => fileInput.click();
-        document.getElementById('addMoreBtn').onclick = () => fileInput.click();
-        document.getElementById('brandHomeLink').onclick = (e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-        document.getElementById('navMergeLink').onclick = () => {
-            if (workspaceItems.length === 0) fileInput.click();
-            else buildMergedPdf();
-        };
-        document.getElementById('navSplitLink').onclick = () => {
-            if (workspaceItems.length === 0) fileInput.click();
-            else expandAllMultiPagePdfs();
-        };
 
-        window.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            heroDropZone.classList.add('dropzone-active');
+        // Full-window drag & drop support
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+            window.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
         });
-        window.addEventListener('dragleave', (e) => {
-            if (e.relatedTarget === null) {
-                heroDropZone.classList.remove('dropzone-active');
-            }
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, () => dropZone.classList.add('dropzone-active'));
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, () => dropZone.classList.remove('dropzone-active'));
         });
         window.addEventListener('drop', (e) => {
-            e.preventDefault();
-            heroDropZone.classList.remove('dropzone-active');
+            dropZone.classList.remove('dropzone-active');
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 handleFiles(e.dataTransfer.files);
             }
@@ -1474,57 +1041,62 @@
             }
         };
 
-        // Toolbar Actions
-        document.getElementById('viewGridBtn').onclick = () => {
-            viewMode = 'grid';
-            renderWorkspace();
+        // Single Unified Action Bar Handlers
+        barAddBtn.onclick = () => fileInput.click();
+        barSplitBtn.onclick = () => splitAllMultiPagePdfs();
+        barOptionsBtn.onclick = () => {
+            optionsModal.classList.remove('hidden');
+            optionsModal.classList.add('flex');
         };
-        document.getElementById('viewListBtn').onclick = () => {
-            viewMode = 'list';
-            renderWorkspace();
-        };
-        document.getElementById('splitAllBtn').onclick = () => expandAllMultiPagePdfs();
-        document.getElementById('rotateAllBtn').onclick = () => {
-            workspaceItems.forEach(item => {
-                item.rotation = (item.rotation + 90) % 360;
-            });
-            invalidateMergedBanner();
-            renderWorkspace();
-        };
-        document.getElementById('sortAzBtn').onclick = () => {
-            workspaceItems.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-            invalidateMergedBanner();
-            renderWorkspace();
-        };
-        document.getElementById('clearAllBtn').onclick = () => {
+        barClearBtn.onclick = () => {
             workspaceItems = [];
-            if (mergedPdfBlobUrl) {
-                URL.revokeObjectURL(mergedPdfBlobUrl);
-                mergedPdfBlobUrl = null;
-            }
-            mergedPdfBytesCache = null;
-            invalidateMergedBanner();
+            mergedBanner.classList.add('hidden');
             renderWorkspace();
+        };
+        barMergeBtn.onclick = () => buildMergedPdf();
+
+        document.getElementById('brandResetLink').onclick = (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Merge & Download Actions
-        mainMergeBtn.onclick = () => buildMergedPdf();
-        document.getElementById('downloadMergedBtn').onclick = () => {
-            const cleanBaseName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '');
-            triggerPdfDownload(`${cleanBaseName}.pdf`);
+        // Options Modal Handlers
+        function closeOptions() {
+            optionsModal.classList.add('hidden');
+            optionsModal.classList.remove('flex');
+            mergedBanner.classList.add('hidden');
+            updateViewVisibilityAndCounts();
+        }
+        closeOptionsBtn.onclick = closeOptions;
+        saveOptionsBtn.onclick = closeOptions;
+        optionsModal.onclick = (e) => { if (e.target === optionsModal) closeOptions(); };
+
+        resetOptionsBtn.onclick = () => {
+            outputFilenameInput.value = 'Pdfy_Merged';
+            pageSizeSelect.value = 'original';
+            pageMarginSelect.value = '24';
+            pageNumberSelect.value = 'none';
+            watermarkInput.value = '';
+            updateViewVisibilityAndCounts();
         };
-        document.getElementById('previewMergedBtn').onclick = async () => {
+
+        // Merged Banner Actions
+        downloadMergedBtn.onclick = () => {
+            const cleanName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '') + '.pdf';
+            triggerDownload(cleanName);
+        };
+        previewMergedBtn.onclick = async () => {
             if (!mergedPdfBytesCache) return;
-            const cleanBaseName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '') + '.pdf';
-            await openInspectorModal({
-                name: cleanBaseName,
+            const cleanName = (outputFilenameInput.value.trim() || 'Pdfy_Merged').replace(/\.pdf$/i, '') + '.pdf';
+            await openPreviewModal({
+                name: cleanName,
                 kind: 'pdf',
                 sizeBytes: mergedPdfBytesCache.byteLength,
                 arrayBuffer: mergedPdfBytesCache,
                 totalPages: mergedPageCount,
                 rotation: 0,
                 isSinglePageSlice: false
-            }, true);
+            });
         };
 
         renderWorkspace();
