@@ -1,0 +1,8 @@
+{
+  "name": "Seamless PDF & Image Merger",
+  "description": "A fast, client-side web application to combine multiple PDF documents and images into a single organized PDF file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
